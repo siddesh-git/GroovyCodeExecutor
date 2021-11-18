@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset = "ISO-8859-1" />
+    <title>Add Products</title>
+    <style>
+        html, body {
+            height: 100%;
+        }
+
+        html {
+            display: table;
+            margin: auto;
+        }
+
+        body {
+            display: table-cell;
+            vertical-align: middle;
+            font-family:  "Roboto Light", sans-serif, Arial;
+            font-size: 16px;
+        }
+        .button {
+            background-color: #008CBA; /* Green */
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius:6px;
+        }
+    </style>
+    <script src = "https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            $("#download-button").click(function() {
+                const uuid = document.getElementById('filedownload').value;
+                if(uuid !== ''){
+                    $.ajax({
+                        type : "GET",
+                        url : "/downloadLogs/"+uuid,
+                        headers : {
+                            "Content-Type" : "application/json"
+                        },
+                        xhrFields: {
+                            responseType: 'blob'
+                        },
+                        success : function(data) {
+                            var a = document.createElement('a');
+                            var url = window.URL.createObjectURL(data);
+                            a.href = url;
+                            a.download = uuid+'.log';
+                            document.body.append(a);
+                            a.click();
+                            a.remove();
+                            window.URL.revokeObjectURL(url);
+                        },
+                        error : function(data) {
+                        }
+                    });
+                }else{
+                    document.getElementById("status").innerHTML="Enter jobid to download the file"
+                }
+            });
+        });
+        async function uploadFile() {
+            var fileInput =
+                document.getElementById('fileupload');
+            var filePath = fileInput.value;
+            var allowedExtensions =
+                /(\.groovy)$/i;
+
+            if (!allowedExtensions.exec(filePath)) {
+                document.getElementById("status").innerHTML='Invalid file type';
+                fileInput.value = '';
+                return false;
+            }
+            else {
+                let formData = new FormData();
+                formData.append("file", fileupload.files[0]);
+                await fetch('/upload', {
+                    method: "POST",
+                    body: formData
+                }).then(res => res.text().then(r => document.getElementById("status").innerHTML = r))
+                    .catch(error => document.getElementById("status").innerHTML = error);
+            }
+        }
+
+        async function statusCheck() {
+            const uuid =document.getElementById('jobstatus').value
+            if(uuid !== ''){
+                await fetch('/status/'+document.getElementById('jobstatus').value, {
+                    method: "GET"
+                }).then(res=>res.text().then(r=>document.getElementById("status").innerHTML=r))
+                    .catch(error=>document.getElementById("status").innerHTML=error);
+            }else{
+                document.getElementById("status").innerHTML="Enter jobid to check the status"
+            }
+
+        }
+    </script>
+</head>
+
+<body>
+<div>
+    <h4>Upload .groovy file</h4>
+    <input id="fileupload" type="file" name="fileupload" />
+    <button id="upload-button" onclick="return uploadFile()"> Upload </button>
+</div>
+<br/>
+<div>
+    <h4>Check job status using JobId</h4>
+    JobId: <input id="jobstatus" type="text" name="jobId" size="50" />
+    <button id="status-button" onclick="statusCheck()"> Check Status </button>
+</div>
+<br/>
+<div>
+    <h4>Download Logs for submitted job</h4>
+    JobId: <input id="filedownload" type="text" name="filedownload" size="50"/>
+    <button id="download-button"> Download Logs </button>
+</div>
+<br/>
+<span id="status"></span>
+</body>
+</html>
